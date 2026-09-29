@@ -1,2 +1,5 @@
-flask>=3.0
-scikit-learn>=1.4
+Flask>=3.0,<4
+gunicorn>=23,<24
+scikit-learn>=1.4,<2
+pypdf>=5,<7
+Werkzeug>=3,<4

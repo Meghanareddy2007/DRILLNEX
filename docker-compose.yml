@@ -1,0 +1,13 @@
+services:
+  drillnex:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      FIELD_DEMO_PASSWORD: ${FIELD_DEMO_PASSWORD:-DrillNex@2026}
+      OFFICE_DEMO_PASSWORD: ${OFFICE_DEMO_PASSWORD:-DrillNex@2026}
+    volumes:
+      - ./data/documents:/app/data/documents
+    restart: unless-stopped
