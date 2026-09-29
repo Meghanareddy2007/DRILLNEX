@@ -64,7 +64,7 @@ def role_required(*roles):
 
 @app.before_request
 def _guard():
-    if request.path.startswith("/api/") and request.path not in ("/api/auth/login","/api/health") and not current_user():
+    if request.path.startswith("/api/") and request.path not in ("/api/auth/login","/api/health") and request.method != "OPTIONS" and not current_user():
         return jsonify(error="Authentication required"),401
 
 @app.get("/api/health")
