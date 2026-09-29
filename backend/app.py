@@ -1,4 +1,4 @@
-"""DRILLNEX SIH 2026 - production-style demo API."""
+﻿"""DRILLNEX SIH 2026 - production-style demo API."""
 import os, re, time, secrets
 from functools import wraps
 from flask import Flask, jsonify, request, send_from_directory
@@ -22,6 +22,13 @@ USERS={
 
 @app.after_request
 def headers(r):
+    origin=request.headers.get("Origin")
+    allowed=os.getenv("FRONTEND_ORIGIN","*")
+    if allowed=="*" or origin==allowed:
+        r.headers["Access-Control-Allow-Origin"]=origin if origin else allowed
+        r.headers["Vary"]="Origin"
+    r.headers["Access-Control-Allow-Headers"]="Content-Type, Authorization, X-Drillnex-Well"
+    r.headers["Access-Control-Allow-Methods"]="GET, POST, OPTIONS"
     r.headers["X-Content-Type-Options"]="nosniff"
     r.headers["X-Frame-Options"]="SAMEORIGIN"
     r.headers["Cache-Control"]="no-store" if request.path.startswith("/api/") or request.path in ("/","/health") else "no-cache"
@@ -177,7 +184,7 @@ def alerts():
     wid=selected_well(); l=telemetry(); r=INTEL.risk(wid,l["depth"]); alerts=[]
     for z in r["zones"][:4]:
         alerts.append({"id":"ALT-"+z["event_type"],"severity":"CRITICAL" if z["score"]>=85 else "HIGH" if z["score"]>=70 else "MEDIUM","title":f"Potential {z['event_type'].replace('_',' ').title()} pattern","score":z["score"],"depth":round(l["depth"],1),"evidence":z["evidence_count"],"nearest":z["nearest_well"]})
-    alerts.append({"id":"ALT-DATA","severity":"INFO","title":"Synthetic telemetry stream healthy","score":100,"depth":round(l["depth"],1),"evidence":0,"nearest":"—"})
+    alerts.append({"id":"ALT-DATA","severity":"INFO","title":"Synthetic telemetry stream healthy","score":100,"depth":round(l["depth"],1),"evidence":0,"nearest":"â€”"})
     return jsonify(alerts)
 
 @app.get("/api/data-quality")
@@ -313,7 +320,7 @@ def handover():
     nearby=sorted([e for e in EVENTS if e["well_id"]!=wid and abs(e["depth"]-l["depth"])<=120 and distance(wid,e["well_id"])<=12],key=lambda e:abs(e["depth"]-l["depth"]))[:4]
     open_items=[]
     if r.get("zones"):
-        z=r["zones"][0]; open_items.append({"title":f"Review {z['event_type'].replace('_',' ').title()} zone","detail":f"Historical zone {z['lo']}–{z['hi']} m; nearest analog {z['nearest_well']}."})
+        z=r["zones"][0]; open_items.append({"title":f"Review {z['event_type'].replace('_',' ').title()} zone","detail":f"Historical zone {z['lo']}â€“{z['hi']} m; nearest analog {z['nearest_well']}."})
     open_items += [{"title":"Monitor live telemetry","detail":"Continue reviewing ROP, torque, pressure and flow against the active baseline."},{"title":"Check supporting evidence","detail":"Use Copilot or evidence search to review the closest historical records."}]
     return jsonify(well_id=wid,formation=w["formation"],depth=l["depth"],telemetry=l,risk={"score":r["score"],"level":r["zones"][0]["level"] if r.get("zones") else "LOW"},events=nearby,open_items=open_items[:4],evidence=[{"event_id":e["event_id"],"well_id":e["well_id"],"depth":e["depth"],"event_type":e["event_type"]} for e in nearby],generated_at=time.strftime("%Y-%m-%d %H:%M:%S"),disclaimer="Synthetic shift-handover draft. Engineer review is required before operational use.")
 
@@ -333,3 +340,5 @@ def _risk():
 insights.register(app,dict(W=WELLS,EV=EVENTS,BYID={e["event_id"]:e for e in EVENTS},STATE=_St(),ACTIVE=ACTIVE,LAYERS=LAYERS,risk=_risk,similar=INTEL.similar,dist=distance,nice=lambda t:t.replace("_"," ").title()))
 
 if __name__=="__main__": app.run(host="0.0.0.0",port=int(os.getenv("PORT","8080")),debug=False)
+
+
